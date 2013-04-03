@@ -25,22 +25,28 @@ grid = grid.split("\n")
 grid.map! &:split
 grid.map! { |c| c.map! &:to_i }
 
-$N = 0
-$E = 1
-$S = 2
-$W = 3
-
-def products(grid, x, y, dir)
-  case dir
-  when $N
-  when $E
-  when $S
-  when $W
+def products(grid, x, y)
+  prods = Array.new(8, 1)  # [1, 1, 1, 1, 1, 1]
+  4.times do |i|
+    prods[0] *= x + i < grid.length ? grid[x + i][y] : 0
+    prods[1] *= x - i >= 0 ? grid[x - i][y] : 0
+    prods[2] *= y + i < grid.length ? grid[x][y + i] : 0
+    prods[3] *= y - i >= 0 ? grid[x][y - i] : 0
+    prods[4] *= ((x + i < grid.length) and (y + i < grid.length)) ?
+        grid[x + i][y + i] : 0
+    prods[5] *= ((x + i < grid.length) and (y - i >= 0)) ?
+        grid[x + i][y - i] : 0
+    prods[6] *= ((x - i >= 0) and (y + i < grid.length)) ?
+        grid[x - i][y + i] : 0
+    prods[7] *= ((x - i >= 0) and (y - i >= 0)) ?
+        grid[x - i][y - i] : 0
+  end
+  prods.max
 end
 
 max = 1
-grid.each_index do |row, y|
-  row.each_index do |item, x|
+grid.each_with_index do |row, y|
+  row.each_with_index do |item, x|
     max = [max, products(grid, x, y)].max
   end
 end
