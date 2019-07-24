@@ -1,3 +1,7 @@
+# NOTE: I don't think this works yet. Also, I suspect this kind of search
+# solution will have to hold in memory O(2^N) paths in memory, for a triangle
+# or tree of depth N. Better to DP for O(N^2).
+
 require 'algorithms'
 
 test_tri = <<-eos
