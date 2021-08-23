@@ -4,3 +4,4 @@
 *.pyc
 a.out
 *.class
+*.in
