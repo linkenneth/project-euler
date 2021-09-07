@@ -1,5 +1,3 @@
-; TODO: (1) improve re-use (2) use agents and process in parallel for practice
-
 (require '[clojure.string :as str])
 
 (def grid
@@ -41,10 +39,17 @@
       (take 4))
   ))
 
-(apply max
-  (map
-    (fn [seq]
-      (->> seq
-        (map #(get-in grid %))
-        (reduce *)))
-    (concat horizontals verticals left-diagonals right-diagonals)))
+(defn compute-max-product-on-grid [seqs]
+  (apply max
+    (map
+      (fn [seq]
+        (->> seq
+          (map #(get-in grid %))
+          (reduce *)))
+      seqs)))
+
+(let [maxes
+      (pmap compute-max-product-on-grid
+                  (list horizontals verticals left-diagonals right-diagonals))]
+  (println (apply max maxes))
+  (shutdown-agents))
