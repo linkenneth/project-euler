@@ -16,7 +16,7 @@
 (def sunday? zero?)
 
 (let [all-days-in-month (for [year (range 1901 2001) month (range 12)]
-                          (days-in-year-month year month))]
+                           (days-in-year-month year month))]
   (reduce (fn [[sunday-count current-day] days]
             [(if (sunday? current-day)
                (inc sunday-count)

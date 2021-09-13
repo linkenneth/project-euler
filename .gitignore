@@ -6,3 +6,4 @@ a.out
 *.class
 *.in
 *.txt
+**/target/**

@@ -22,8 +22,7 @@
                  (divisors (/ n p))
                  (set (map (partial * p) (divisors (/ n p))))))))
 
-(defn proper-divisors [n]
-  (disj (divisors n) n))
+(defn proper-divisors [n] (disj (divisors n) n))
 (def proper-divisors (memoize proper-divisors))
 
 (let [divisor-sums (->> (range 2 10000)
