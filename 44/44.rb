@@ -1,3 +1,5 @@
+# TODO: this clearly doesn't work yet
+
 require 'set'
 
 pentagonals = Enumerator.new do |yielder|

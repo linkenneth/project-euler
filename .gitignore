@@ -7,3 +7,4 @@ a.out
 *.in
 *.txt
 **/target/**
+.cpcache
