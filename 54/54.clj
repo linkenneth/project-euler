@@ -1,4 +1,8 @@
 (require '[clojure.string :as str])
+(require '[clojure.spec.alpha :as spec])
+(require '[expound.alpha :as expound])
+
+(set! spec/*explain-out* expound/printer)
 
 ;; --- card functions --
 
@@ -13,82 +17,88 @@
 
 ;; --- hand functions --
 
-;; TODO: function returns the sorted 5-card hand with rank
-;; idea: "parse" the cards
-(def sort-by-value (partial sort-by (comp - value)))
-
-(defn get-straight [cards]
-  (when (= (set (map value cards))
-           (set (take 5 (iterate dec (value (highest-card cards))))))
-    (sort-by-value cards)))
-
-; (defn straight? [cards]
-;   (= (set (map value cards))
-;      (set (take 5 (iterate dec (value (highest-card cards)))))))
-
-(defn get-flush [cards]
-  (when (apply = (map suit cards))
-    (sort-by-value cards)))
-
-; (defn flush? [cards]
-;   (apply = (map suit cards)))
-
-(defn sort-by-freq [freqs cards]
-  (partial sort-by (comp (juxt (comp - freqs) -) value) cards))
-
-(defn n-of-a-kind [cards n]
-  (first (filter (fn [[_ count]] (= count n)) (frequencies (map value cards)))))
-
-; (defn get-four-of-a-kind [cards]
-;   (when-let [[val _] (n-of-a-kind cards 4)]
-;     (sort-by #(not= val (value %)) cards)))
-(defn get-four-of-a-kind [cards]
+(defn standard-sort [cards]
   (let [freqs (frequencies (map value cards))]
-    (sort-by #(not= val (value %)) cards)))
+    (sort-by (comp (juxt (comp - freqs) -) value) cards)))
 
-(def thp #{"5S" "5H" "5C" "3D" "TD"})
+(defn straight? [cards]
+  (let [vals (set (map value cards))]
+    (or (= vals #{14 2 3 4 5})
+        (= vals (set (take 5 (iterate dec (value (highest-card cards)))))))))
 
-(defn get-three-of-a-kind [cards]
-  (when-let [[val _] (n-of-a-kind cards 3)]
-    (sort-by #(not= val (value %)) cards)))
+(defn flush? [cards]
+  (apply = (map suit cards)))
 
-(def tp #{"5S" "5H" "3H" "3D" "TD"})
+(defn n-of-a-kind? [cards n]
+  (some (fn [[_ count]] (= count n)) (frequencies (map value cards))))
 
-(defn get-two-pair [cards]
+(defn full-house? [cards]
+  (and (n-of-a-kind? cards 3) (n-of-a-kind? cards 2)))
+
+(defn two-pair? [cards]
   (let [freqs (frequencies (map value cards))]
-    (when (= 2 (count (filter (fn [[_ count]] (= count 2)) freqs)))
-      (sort-by-freq freqs cards))))
+    (= 2 (count ((group-by second freqs) 2)))))
 
-
-(defn get-pair [cards]
-  (when-let [[val _] (n-of-a-kind cards 2)]
-    (sort-by #(not= val (value %)) cards)))
-
-(def get-high-card sort-by-value)
-
-;; TODO: use this to try out spec clojure
+;; TODO: use this to try out spec clojure, and also testing in clojure
 (defn hand
   "cards is a set of 5 cards"
   [cards]
-  (cond
-    (and (flush? cards) (straight? cards))
-    [:straight-flush [(highest-card cards)]]
+  (let [sorted-cards (vec (standard-sort cards))]
+    (cond
+      (and (flush? cards) (straight? cards)) [:straight-flush sorted-cards]
+      (n-of-a-kind? cards 4) [:four-of-a-kind sorted-cards]
+      (full-house? cards) [:full-house sorted-cards]
+      (flush? cards) [:flush sorted-cards]
+      (straight? cards) [:straight sorted-cards]
+      (n-of-a-kind? cards 3) [:three-of-a-kind sorted-cards]
+      (two-pair? cards) [:two-pair sorted-cards]
+      (n-of-a-kind? cards 2) [:pair sorted-cards]
+      :else [:high-card sorted-cards])))
 
-    (four-of-a-kind? cards) [:four-of-a-kind 4]))
+(def hand-ranks
+  (reduce-kv #(assoc %1 %3 %2) {}
+             [:high-card :pair :two-pair
+              :three-of-a-kind :straight :flush
+              :full-house :four-of-a-kind :straight-flush]))
 
-(defn play [cards-1 cards-2]
-  ;; TODO: compare hands and determine winner
-  :player-1)
-  ; (let [hand-1 (hand cards-1)
-  ;       hand-2 (hand cards-2)]))
+(defn compare-hand [hand-1 hand-2]
+  (println "Comparing " hand-1 hand-2)
+  (let [[rank-1 cards-1] hand-1
+        [rank-2 cards-2] hand-2]
+    (prn
+      [(hand-ranks rank-1) (mapv value cards-1)]
+      [(hand-ranks rank-2) (mapv value cards-2)])
+    (compare
+      [(hand-ranks rank-1) (mapv value cards-1)]
+      [(hand-ranks rank-2) (mapv value cards-2)])))
+
+;; -- manual testing --
+
+(def a-four-of-a-kind #{"5S" "5H" "5C" "5D" "TD"})
+(def a-three-of-a-kind #{"5S" "5H" "5C" "3D" "TD"})
+(def a-two-pair #{"5S" "5H" "3H" "3D" "TD"})
+(def a-pair #{"5S" "5H" "JH" "3D" "TD"})
+(def a-straight-flush #{"TD" "JD" "QD" "KD" "AD"})
+(def a-straight #{"AD" "2H" "3D" "4D" "5C"})
+(def a-flush #{"6H" "7H" "8H" "2H" "AH"})
+(def a-high-card #{"5S" "AH" "JC" "2D" "TD"})
+
+;; -- parsing --
 
 (defn ^:private line->game [line]
-  (vec (partition 5 (str/split line #" "))))
+  (mapv set (partition 5 (str/split line #" "))))
+
+(def games (->> (slurp "poker.txt")
+                str/split-lines
+                (map line->game)))
 
 (defn main- []
   (let [games (->> (slurp "poker.txt")
                    str/split-lines
                    (map line->game))]
-    (filter (fn [[cards-1 cards-2]]
-              (= (play cards-1 cards-2) :player-1))
-            games)))
+    (->> games
+         (map (partial map hand))
+         (filter #(> (apply compare-hand %) 0))
+         count)))
+
+(main-)
