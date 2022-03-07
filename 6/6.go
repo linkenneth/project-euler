@@ -21,5 +21,5 @@ func squareOfSums(n int) int {
 }
 
 func main() {
-	fmt.Println(squareOfSums(100) - sumOfSquares(100));
+	fmt.Println(squareOfSums(100) - sumOfSquares(100))
 }

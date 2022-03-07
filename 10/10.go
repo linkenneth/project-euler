@@ -1,12 +1,10 @@
-// Approach: Sieve of Eratosthenes with boolean[]
-// TODO: try this with BitSet
-
 package main
 
 import (
 	"fmt"
 )
 
+// from 7.go
 func Sieve(max int) []int {
 	var a []bool
 	var out []int
@@ -25,6 +23,9 @@ func Sieve(max int) []int {
 }
 
 func main() {
-	primes := Sieve(150000)
-	fmt.Println(primes[10000])
+	sum := 0
+	for _, p := range Sieve(2_000_000) {
+		sum += p
+	}
+	fmt.Println(sum)
 }

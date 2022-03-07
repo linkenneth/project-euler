@@ -6,7 +6,7 @@ import (
 
 func isDivisible(n int) bool {
 	for i := 1; i <= 20; i++ {
-		if n % i != 0 {
+		if n%i != 0 {
 			return false
 		}
 	}

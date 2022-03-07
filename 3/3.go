@@ -6,8 +6,8 @@ import (
 
 func getPrimes(x int) []int {
 	var primes []int
-	for i := 3; i * i < x; i += 2 {
-		for x % i == 0 {
+	for i := 3; i*i < x; i += 2 {
+		for x%i == 0 {
 			primes = append(primes, i)
 			x /= i
 		}
